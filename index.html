@@ -23,7 +23,7 @@
 <div style="margin-top:14px"><label for="quality2">Qualidade adicional</label><select id="quality2"><option value="balanced" selected>Equilibrada</option><option value="high">Mais qualidade (arquivo maior)</option><option value="small">Arquivo menor</option></select></div>
 </section>
 <section class="card hidden" id="audioopts">
-<div class="grid"><div><label for="afmt">Formato de saída</label><select id="afmt"><option value="mp3" selected>MP3</option><option value="m4a">M4A (AAC)</option><option value="opus">OPUS (OGG)</option><option value="wav">WAV (sem compressão)</option><option value="flac">FLAC (sem perdas)</option></select></div>
+<div class="grid"><div><label for="afmt">Formato de saída</label><select id="afmt"><option value="mp3" selected>MP3</option><option value="m4a">M4A (AAC)</option><option value="wav">WAV (sem compressão)</option><option value="flac">FLAC (sem perdas)</option></select></div>
 <div id="abitwrap"><label for="abit">Qualidade (taxa de bits)</label><select id="abit"><option value="64">64 kbps — voz / menor</option><option value="96">96 kbps</option><option value="128">128 kbps — boa</option><option value="192" selected>192 kbps — alta</option><option value="256">256 kbps</option><option value="320">320 kbps — máxima</option></select></div></div>
 <div style="margin-top:14px"><label for="ach">Canais</label><select id="ach"><option value="original" selected>Manter original</option><option value="1">Mono (arquivo menor)</option><option value="2">Estéreo</option></select></div>
 <p class="notice">Dá para enviar também um vídeo: o app extrai só o áudio dele.</p>
@@ -38,13 +38,13 @@ const fmtBytes=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(2)
 let kind='video';
 const AUD_EXT=['mp3','m4a','aac','wav','flac','ogg','oga','opus','wma','amr','aif','aiff','mka'];
 const DROP_V=['📂 Escolher ou soltar um vídeo aqui','MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg'];
-const DROP_A=['📂 Escolher ou soltar um áudio (ou vídeo) aqui','MP3, M4A, WAV, FLAC, OGG, OPUS… ou extraia o áudio de um vídeo'];
+const DROP_A=['📂 Escolher ou soltar um áudio (ou vídeo) aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
 function setKind(k){kind=k;const a=k==='audio';document.querySelectorAll('#kindseg button').forEach(x=>x.classList.toggle('active',x.dataset.kind===k));$('videoopts').classList.toggle('hidden',a);$('audioopts').classList.toggle('hidden',!a);$('statdim').classList.toggle('hidden',a);$('go').textContent=a?'CONVERTER ÁUDIO':'COMPACTAR VÍDEO';$('resulttitle').textContent=a?'✅ Áudio pronto!':'✅ Vídeo pronto!';$('download').textContent=a?'⬇️ BAIXAR ÁUDIO':'⬇️ BAIXAR VÍDEO';$('dropt').textContent=(a?DROP_A:DROP_V)[0];$('drops').textContent=(a?DROP_A:DROP_V)[1];$('result').style.display='none'}
 document.querySelectorAll('#kindseg button').forEach(b=>b.onclick=()=>setKind(b.dataset.kind));
 $('afmt').onchange=()=>$('abitwrap').classList.toggle('hidden',['wav','flac'].includes($('afmt').value));
 async function runAudio(input){
  const fmt=$('afmt').value,br=$('abit').value,ch=$('ach').value;
- const cfg={mp3:{ext:'mp3',mime:'audio/mpeg',codec:['-c:a','libmp3lame']},m4a:{ext:'m4a',mime:'audio/mp4',codec:['-c:a','aac']},opus:{ext:'opus',mime:'audio/ogg',codec:['-c:a','libopus']},wav:{ext:'wav',mime:'audio/wav',codec:['-c:a','pcm_s16le']},flac:{ext:'flac',mime:'audio/flac',codec:['-c:a','flac']}}[fmt];
+ const cfg={mp3:{ext:'mp3',mime:'audio/mpeg',codec:['-c:a','libmp3lame']},m4a:{ext:'m4a',mime:'audio/mp4',codec:['-c:a','aac']},wav:{ext:'wav',mime:'audio/wav',codec:['-c:a','pcm_s16le']},flac:{ext:'flac',mime:'audio/flac',codec:['-c:a','flac']}}[fmt];
  const out='output.'+cfg.ext;
  const args=['-i',input,'-y','-vn','-map','0:a:0','-map_metadata','0',...cfg.codec];
  if(!['wav','flac'].includes(fmt))args.push('-b:a',br+'k');
