@@ -57,9 +57,20 @@ async function loadFF(){
   const worker='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
   const coreURL=await downloadAsBlobURL(base+'/ffmpeg-core.js','text/javascript','núcleo FFmpeg',1,3);
   const wasmURL=await downloadAsBlobURL(base+'/ffmpeg-core.wasm','application/wasm','motor WebAssembly',3,9);
-  const classWorkerURL=await downloadAsBlobURL(worker,'text/javascript','Worker FFmpeg',9,10);
-  update(10,'Inicializando motor de vídeo...');
-  await ffmpeg.load({coreURL,wasmURL,classWorkerURL});
+  // O worker principal precisa ser Blob, mas seus imports relativos precisam
+  // apontar explicitamente para os módulos ESM do mesmo pacote no CDN.
+  update(9,'Preparando Worker do FFmpeg...');
+  const workerResponse=await fetch(worker,{mode:'cors',cache:'force-cache'});
+  if(!workerResponse.ok)throw new Error(`Falha ao baixar Worker FFmpeg: HTTP ${workerResponse.status}`);
+  let workerSource=await workerResponse.text();
+  const workerBase='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/';
+  workerSource=workerSource.replace(/(["'])\.\/([a-zA-Z0-9_-]+\.js)\1/g,(_,q,file)=>q+workerBase+file+q);
+  const classWorkerURL=URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'}));
+  update(10,'Inicializando motor de vídeo (Worker + WebAssembly)...');
+  await Promise.race([
+    ffmpeg.load({coreURL,wasmURL,classWorkerURL}),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('O FFmpeg não respondeu ao iniciar em 90 segundos. Verifique se o navegador permite Workers e WebAssembly.')),90000))
+  ]);
   loaded=true;update(10,'Motor pronto. Preparando vídeo...');
 }
 $('go').onclick=async()=>{if(!selected)return;const btn=$('go');btn.disabled=true;$('progressbox').style.display='block';$('result').style.display='none';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null}try{update(1,'Carregando motor de vídeo (primeira vez pode demorar)...');await loadFF();const ext=$('codec').value,input='input.'+(selected.name.split('.').pop()||'mp4').replace(/[^a-z0-9]/ig,'');await ffmpeg.writeFile(input,await fetchFile(selected));let args=['-i',input,'-y'];const res=$('resolution').value;if(res!=='original'){args.push('-vf',`scale=-2:'min(${res},ih)'`)}
