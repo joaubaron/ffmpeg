@@ -1,4 +1,4 @@
-const CACHE_VERSION = '26.11.2026-1552';
+const CACHE_VERSION = '26.11.2026-1557';
 const CACHE_PREFIX = 'redutor-video-';
 const CACHE = CACHE_PREFIX + CACHE_VERSION;
 
