@@ -11,7 +11,7 @@
 <body><main>
 <header class="head"><div class="logo">🎬</div><div><h1>Redutor de Vídeos</h1><p>Compacte vídeos no seu dispositivo • sem upload</p></div></header>
 <section class="card">
-<div class="drop" id="drop"><strong>📂 Escolher ou soltar um vídeo aqui</strong><small>MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg</small><input id="file" type="file" accept="video/*"></div>
+<div class="drop" id="drop"><strong>📂 Escolher ou soltar um vídeo aqui</strong><small>MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg</small><input id="file" type="file" accept="video/*,.mts,.m2ts,.ts"></div>
 <div class="fileinfo" id="fileinfo"><strong id="filename"></strong><div class="stats"><div class="stat"><span>Tamanho</span><b id="filesize">—</b></div><div class="stat"><span>Resolução</span><b id="dimensions">—</b></div><div class="stat"><span>Duração</span><b id="duration">—</b></div></div></div>
 </section>
 <section class="card">
@@ -30,7 +30,7 @@ const $=id=>document.getElementById(id);let selected=null,meta=null,mode='size',
 const fmtBytes=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(2)+' MB';const fmtTime=s=>{if(!isFinite(s))return'—';let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=Math.floor(s%60);return h?`${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${m}:${String(ss).padStart(2,'0')}`};
 $('drop').onclick=()=> $('file').click();$('file').onchange=e=>setFile(e.target.files[0]);
 $('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('drag')};$('drop').ondragleave=()=> $('drop').classList.remove('drag');$('drop').ondrop=e=>{e.preventDefault();$('drop').classList.remove('drag');setFile(e.dataTransfer.files[0])};
-function setFile(f){if(!f||!f.type.startsWith('video/'))return;selected=f;const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{meta={duration:v.duration,width:v.videoWidth,height:v.videoHeight};$('filename').textContent=f.name;$('filesize').textContent=fmtBytes(f.size);$('dimensions').textContent=`${meta.width} × ${meta.height}`;$('duration').textContent=fmtTime(meta.duration);$('fileinfo').style.display='block';$('go').disabled=false;v.src='';};v.src=URL.createObjectURL(f)}
+function setFile(f){if(!f)return;const ext=(f.name.split('.').pop()||'').toLowerCase();if(!f.type.startsWith('video/')&&!['mts','m2ts','ts'].includes(ext)){alert('Selecione um arquivo de vídeo.');return;}selected=f;const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{meta={duration:v.duration,width:v.videoWidth,height:v.videoHeight};$('filename').textContent=f.name;$('filesize').textContent=fmtBytes(f.size);$('dimensions').textContent=`${meta.width} × ${meta.height}`;$('duration').textContent=fmtTime(meta.duration);$('fileinfo').style.display='block';$('go').disabled=false;v.src='';};v.src=URL.createObjectURL(f)}
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('active',x===b));$('sizemode').classList.toggle('hidden',mode!=='size');$('qualitymode').classList.toggle('hidden',mode!=='quality')});$('quality').oninput=()=>{let n=+$('quality').value;$('crflabel').textContent=n<=22?`${n} — alta qualidade`:n<=28?`${n} — equilibrada`:`${n} — compactação alta`};
 function update(p,msg){$('bar').style.width=Math.max(0,Math.min(100,p))+'%';$('status').textContent=msg}
 async function downloadAsBlobURL(url,type,label,progressStart,progressEnd){
