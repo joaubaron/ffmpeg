@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d5fd1">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Reduzir Vídeo</title>
+<style>
+:root{--bg:#eef3f9;--card:#fff;--ink:#12263a;--mute:#5d6f82;--azul:#1d5fd1;--verde:#13915f;--erro:#c43a2f;--linha:#d7e0ea}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1824;--card:#16243a;--ink:#eaf1f8;--mute:#9db0c3;--azul:#5b9bff;--verde:#3fd09a;--erro:#ff8a7f;--linha:#26384f}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:max(18px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom))}
+main{max-width:520px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:28px;margin:6px 0 0;letter-spacing:-.5px}
+.sub{color:var(--mute);margin:0}
+.card{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:18px}
+.escolher{display:block;text-align:center;border:2px dashed var(--azul);border-radius:16px;padding:30px 16px;cursor:pointer;color:var(--azul);font-weight:700;font-size:19px}
+.escolher small{display:block;color:var(--mute);font-weight:400;margin-top:4px;font-size:15px}
+input[type=file]{display:none}
+.nome{font-weight:600;word-break:break-all}
+.opcoes{display:grid;gap:10px;margin-top:12px}
+.opcao{display:flex;gap:12px;align-items:center;border:2px solid var(--linha);border-radius:12px;padding:12px 14px;cursor:pointer}
+.opcao input{accent-color:var(--azul);width:20px;height:20px;margin:0}
+.opcao b{display:block}
+.opcao span{color:var(--mute);font-size:15px}
+.opcao:has(input:checked){border-color:var(--azul)}
+button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:16px;width:100%;cursor:pointer;background:var(--azul);color:#fff}
+button.sec{background:transparent;color:var(--azul);border:2px solid var(--azul)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,.escolher:focus-within,.opcao:focus-within{outline:3px solid var(--azul);outline-offset:2px}
+.barra{height:14px;background:var(--linha);border-radius:99px;overflow:hidden;margin:12px 0 6px}
+.barra i{display:block;height:100%;width:0;background:var(--azul);transition:width .3s}
+.aviso{color:var(--mute);font-size:15px;margin:0}
+.erro{color:var(--erro);font-weight:600}
+video{width:100%;border-radius:12px;background:#000;max-height:50vh}
+.tam{display:flex;justify-content:space-between;gap:10px;margin:12px 0;font-size:16px}
+.tam div{flex:1;background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.tam strong{display:block;font-size:21px}
+.menos{color:var(--verde);font-weight:700;text-align:center;font-size:19px;margin:0 0 12px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Reduzir Vídeo</h1>
+    <p class="sub">Deixe seu vídeo menor. Tudo no seu celular, sem enviar nada.</p>
+  </header>
+
+  <label class="escolher card" id="areaEscolher">
+    Escolher vídeo
+    <small>Toque aqui</small>
+    <input type="file" id="arquivo" accept="video/*">
+  </label>
+
+  <section class="card" id="painelOpcoes" hidden>
+    <div class="nome" id="nomeArq"></div>
+    <div class="sub" id="tamArq"></div>
+    <div class="opcoes" role="radiogroup" aria-label="Quanto reduzir">
+      <label class="opcao"><input type="radio" name="q" value="forte"><div><b>Bem menor</b><span>Ideal para WhatsApp</span></div></label>
+      <label class="opcao"><input type="radio" name="q" value="media" checked><div><b>Menor</b><span>Boa imagem, arquivo leve</span></div></label>
+      <label class="opcao"><input type="radio" name="q" value="leve"><div><b>Melhor imagem</b><span>Reduz menos</span></div></label>
+    </div>
+    <div style="margin-top:14px"><button id="btnReduzir">Reduzir vídeo</button></div>
+  </section>
+
+  <section class="card" id="painelProgresso" hidden>
+    <b id="txtStatus">Preparando…</b>
+    <div class="barra"><i id="bar"></i></div>
+    <p class="aviso" id="txtDica">Pode demorar. Deixe esta tela aberta.</p>
+    <div style="margin-top:14px"><button class="sec" id="btnCancelar">Cancelar</button></div>
+  </section>
+
+  <section class="card" id="painelPronto" hidden>
+    <p class="menos" id="txtMenos"></p>
+    <video id="prev" controls playsinline></video>
+    <div class="tam">
+      <div>Antes<strong id="tAntes"></strong></div>
+      <div>Depois<strong id="tDepois"></strong></div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <button id="btnSalvar">Salvar vídeo</button>
+      <button class="sec" id="btnOutro">Reduzir outro</button>
+    </div>
+  </section>
+
+  <p class="erro" id="erro" role="alert" hidden></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<script>
+(function(){
+  var $ = function(id){return document.getElementById(id)};
+  var FF = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/';
+  var CORE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/';
+  var WASM_BYTES = 32129114;
+  var PRESETS = {
+    forte:{h:480,crf:32,ab:'64k'},
+    media:{h:720,crf:29,ab:'96k'},
+    leve :{h:1080,crf:25,ab:'128k'}
+  };
+  var ffmpeg=null, pronto=false, arquivo=null, saida=null, cancelou=false, urlPrev=null;
+
+  function mostrar(qual){
+    ['painelOpcoes','painelProgresso','painelPronto'].forEach(function(id){$(id).hidden = (id!==qual)});
+    $('areaEscolher').hidden = (qual!==null && qual!=='painelOpcoes');
+  }
+  function erro(msg){ $('erro').textContent=msg; $('erro').hidden=!msg; }
+  function mb(b){ return b>=1073741824 ? (b/1073741824).toFixed(2)+' GB' : (b/1048576).toFixed(1)+' MB'; }
+
+  $('arquivo').addEventListener('change', function(e){
+    var f=e.target.files[0]; if(!f) return;
+    erro('');
+    if(f.size>1.5*1073741824){ erro('Este vídeo é muito grande. Use um de até 1,5 GB.'); return; }
+    arquivo=f;
+    $('nomeArq').textContent=f.name;
+    $('tamArq').textContent='Tamanho: '+mb(f.size);
+    mostrar('painelOpcoes');
+  });
+
+
+  var workerBlob=null, WorkerReal=window.Worker;
+  window.Worker=function(u,o){
+    if(workerBlob && String(u)===workerBlob) return new WorkerReal(u);
+    return new WorkerReal(u,o);
+  };
+  window.Worker.prototype=WorkerReal.prototype;
+
+  function comTempo(promessa,ms,nome){
+    return new Promise(function(ok,nok){
+      var t=setTimeout(function(){nok(new Error('tempo:'+nome))},ms);
+      promessa.then(function(v){clearTimeout(t);ok(v)},function(e){clearTimeout(t);nok(e)});
+    });
+  }
+  async function baixar(url,tipo,onProg){
+    var ctl=new AbortController();
+    var parou=setTimeout(function(){ctl.abort()},120000);
+    var res=await fetch(url,{signal:ctl.signal});
+    if(!res.ok) throw new Error('http '+res.status);
+    var partes=[],lido=0,r=res.body.getReader();
+    for(;;){
+      var x=await r.read();
+      if(x.done) break;
+      partes.push(x.value); lido+=x.value.length;
+      clearTimeout(parou); parou=setTimeout(function(){ctl.abort()},30000);
+      if(onProg) onProg(Math.min(0.99,lido/WASM_BYTES));
+    }
+    clearTimeout(parou);
+    return URL.createObjectURL(new Blob(partes,{type:tipo}));
+  }
+
+  async function preparar(){
+    if(pronto) return;
+    if(location.protocol==='file:') throw new Error('arquivo');
+    if(!ffmpeg){
+      ffmpeg=new FFmpegWASM.FFmpeg();
+      ffmpeg.on('progress', function(p){
+        var v=Math.max(0,Math.min(1,p.progress||0));
+        $('bar').style.width=(v*100).toFixed(0)+'%';
+        $('txtStatus').textContent='Reduzindo… '+(v*100).toFixed(0)+'%';
+      });
+    }
+    $('txtStatus').textContent='Baixando o motor… 0%';
+    $('txtDica').textContent='Só na 1ª vez. Depois fica salvo no celular.';
+    var worker=await baixar(FF+'814.ffmpeg.js','text/javascript');
+    workerBlob=worker;
+    var core=await baixar(CORE+'ffmpeg-core.js','text/javascript');
+    var wasm=await baixar(CORE+'ffmpeg-core.wasm','application/wasm',function(v){
+      $('bar').style.width=(v*100).toFixed(0)+'%';
+      $('txtStatus').textContent='Baixando o motor… '+(v*100).toFixed(0)+'%';
+    });
+    $('bar').style.width='0';
+    $('txtStatus').textContent='Abrindo o motor…';
+    await comTempo(ffmpeg.load({classWorkerURL:worker,coreURL:core,wasmURL:wasm}),90000,'abrir');
+    pronto=true;
+  }
+
+  $('btnReduzir').addEventListener('click', async function(){
+    erro(''); cancelou=false;
+    var cfg=PRESETS[document.querySelector('input[name=q]:checked').value];
+    mostrar('painelProgresso');
+    $('bar').style.width='0';
+    try{
+      await preparar();
+      $('txtStatus').textContent='Lendo o vídeo…';
+      await ffmpeg.writeFile('entrada', await FFmpegUtil.fetchFile(arquivo));
+      $('txtStatus').textContent='Reduzindo… 0%';
+      var code=await ffmpeg.exec([
+        '-i','entrada',
+        '-vf','scale=-2:min('+cfg.h+'\\,ih)',
+        '-c:v','libx264','-preset','superfast','-crf',String(cfg.crf),
+        '-pix_fmt','yuv420p',
+        '-c:a','aac','-b:a',cfg.ab,
+        '-movflags','+faststart',
+        'saida.mp4'
+      ]);
+      if(code!==0) throw new Error('falhou');
+      var dados=await ffmpeg.readFile('saida.mp4');
+      try{ await ffmpeg.deleteFile('entrada'); await ffmpeg.deleteFile('saida.mp4'); }catch(_){}
+      saida=new Blob([dados.buffer],{type:'video/mp4'});
+      if(urlPrev) URL.revokeObjectURL(urlPrev);
+      urlPrev=URL.createObjectURL(saida);
+      $('prev').src=urlPrev;
+      $('tAntes').textContent=mb(arquivo.size);
+      $('tDepois').textContent=mb(saida.size);
+      var pct=Math.round((1-saida.size/arquivo.size)*100);
+      $('txtMenos').textContent = pct>0 ? 'Ficou '+pct+'% menor!' : 'Este vídeo já estava bem leve.';
+      mostrar('painelPronto');
+    }catch(err){
+      if(cancelou) return;
+      mostrar('painelOpcoes');
+      var msg=String(err&&err.message||err);
+      if(msg==='arquivo' || /dynamically imported|importScripts/i.test(msg)) erro('Abra o app por um endereço http (localhost ou GitHub Pages). Não funciona abrindo o arquivo direto.');
+      else if(/tempo|abort|Failed to fetch|http|NetworkError/i.test(msg)) erro('Não consegui baixar o motor. Veja a internet e tente de novo.');
+      else erro('Não deu certo. Tente "Bem menor" ou um vídeo mais curto.');
+      console.error(err);
+      if(msg!=='arquivo') $('erro').textContent+=' ('+msg.slice(0,60)+')';
+      try{ ffmpeg.terminate(); }catch(_){}
+      ffmpeg=null; pronto=false;
+    }
+  });
+
+  $('btnCancelar').addEventListener('click', function(){
+    cancelou=true;
+    try{ ffmpeg.terminate(); }catch(_){}
+    ffmpeg=null; pronto=false;
+    mostrar('painelOpcoes');
+  });
+
+  $('btnSalvar').addEventListener('click', async function(){
+    var nome=arquivo.name.replace(/\.[^.]+$/,'')+'-menor.mp4';
+    var f=new File([saida],nome,{type:'video/mp4'});
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      try{ await navigator.share({files:[f]}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
+    }
+    var a=document.createElement('a'); a.href=urlPrev; a.download=nome;
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  $('btnOutro').addEventListener('click', function(){
+    $('arquivo').value=''; arquivo=null; saida=null; erro('');
+    $('prev').removeAttribute('src');
+    mostrar(null); $('areaEscolher').hidden=false;
+  });
+
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+})();
+</script>
+</body>
+</html>
