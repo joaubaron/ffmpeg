@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14251d"><meta name="description" content="Compacte vídeos e converta áudio localmente no seu dispositivo.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
+<title>Redutor de Vídeos</title>
+<style>
+:root{color-scheme:dark;--bg:#101713;--panel:#1a241e;--line:#304137;--text:#f3f6f3;--muted:#a8b7ad;--green:#42c879;--green2:#23794a;--danger:#f07b7b}*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#15231b,#0c120f 60%);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);min-height:100vh}main{max-width:760px;margin:auto;padding:24px 16px 48px}.head{display:flex;align-items:center;gap:12px;margin-bottom:20px}.logo{font-size:30px}.head h1{font-size:24px;margin:0}.head p{margin:3px 0 0;color:var(--muted);font-size:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin:12px 0}.drop{border:2px dashed #466251;border-radius:14px;text-align:center;padding:26px 14px;cursor:pointer;transition:.2s}.drop:hover,.drop.drag{border-color:var(--green);background:#20372a}.drop strong{display:block;font-size:17px;margin-bottom:6px}.drop small{color:var(--muted)}input[type=file]{display:none}.fileinfo{display:none;margin-top:14px;padding:12px;background:#101813;border-radius:12px}.fileinfo strong{display:block;word-break:break-word}.stats{display:flex;gap:10px;margin-top:10px}.stat{flex:1;background:#202c24;border-radius:10px;padding:10px}.stat span{font-size:12px;color:var(--muted);display:block}.stat b{font-size:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-weight:600;font-size:14px;margin:0 0 7px}select,input[type=number]{width:100%;background:#101813;color:var(--text);border:1px solid #3b5143;border-radius:10px;padding:12px;font:inherit}input[type=range]{width:100%;accent-color:var(--green)}.rangevalue{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}.seg{display:flex;background:#101813;border-radius:10px;padding:4px;gap:4px}.seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:9px 5px;border-radius:8px;cursor:pointer}.seg button.active{background:#2b4935;color:#fff}.hidden{display:none!important}.primary{width:100%;border:0;border-radius:13px;padding:15px;background:var(--green);color:#082112;font-size:17px;font-weight:800;cursor:pointer}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{border:1px solid var(--line);border-radius:10px;background:#26342b;color:var(--text);padding:10px 14px;cursor:pointer}.progressbox{display:none;margin-top:15px}.progress{height:12px;border-radius:20px;background:#0d130f;overflow:hidden}.bar{height:100%;width:0;background:linear-gradient(90deg,#28a95f,#68e69b);transition:width .2s}.status{font-size:13px;color:var(--muted);margin:8px 0}.result{display:none;background:#193625;border:1px solid #2d784a;border-radius:14px;padding:14px;margin-top:15px}.result h3{margin:0 0 8px}.result a{display:block;text-decoration:none;background:#42c879;color:#092113;text-align:center;padding:12px;border-radius:10px;font-weight:800;margin-top:10px}.notice{color:var(--muted);font-size:12px;line-height:1.5}.err{color:var(--danger)}footer{text-align:center;color:#84948a;font-size:12px;margin-top:22px}@media(max-width:520px){main{padding:16px 12px 32px}.card{padding:14px}.grid{grid-template-columns:1fr}.head h1{font-size:22px}}
+</style></head>
+<body><main>
+<header class="head"><div class="logo">🎬</div><div><h1>Redutor de Vídeos</h1><p>Compacte vídeos e converta áudio no seu dispositivo • sem upload</p></div></header>
+<section class="card">
+<div class="seg" id="kindseg" style="margin-bottom:14px"><button class="active" data-kind="video">🎬 Vídeo</button><button data-kind="audio">🎵 Áudio</button></div>
+<div class="drop" id="drop"><strong id="dropt">📂 Escolher ou soltar um vídeo aqui</strong><small id="drops">MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg</small><input id="file" type="file" accept="video/*,audio/*,.mts,.MTS,.m2ts,.M2TS,.ts,.TS,.m4a,.flac,.opus,.wma,.aac,.mka"></div>
+<div class="fileinfo" id="fileinfo"><strong id="filename"></strong><div class="stats"><div class="stat"><span>Tamanho</span><b id="filesize">—</b></div><div class="stat" id="statdim"><span>Resolução</span><b id="dimensions">—</b></div><div class="stat"><span>Duração</span><b id="duration">—</b></div></div></div>
+</section>
+<section class="card" id="videoopts">
+<label>O que deseja fazer?</label><div class="seg" id="modeseg"><button class="active" data-mode="size">Tamanho (MB)</button><button data-mode="quality">Qualidade</button></div>
+<div id="sizemode" style="margin-top:14px"><label for="target">Tamanho desejado do arquivo (MB)</label><input id="target" type="number" min="1" step="1" value="25"><p class="notice">O aplicativo calcula uma taxa de compressão aproximada a partir da duração. O resultado pode variar.</p></div>
+<div id="qualitymode" class="hidden" style="margin-top:14px"><label for="quality">Qualidade (CRF): <span id="crflabel">28 — compactação alta</span></label><input id="quality" type="range" min="18" max="35" value="28"><div class="rangevalue"><span>Melhor qualidade</span><span>Arquivo menor</span></div></div>
+<div class="grid" style="margin-top:14px"><div><label for="resolution">Resolução máxima</label><select id="resolution"><option value="original">Manter original</option><option value="2160">4K (2160p)</option><option value="1080">Full HD (1080p)</option><option value="720" selected>HD (720p)</option><option value="480">480p</option><option value="360">360p</option></select></div><div><label for="codec">Formato</label><select id="codec"><option value="mp4" selected>MP4 (H.264)</option><option value="webm">WebM (VP9)</option></select></div></div>
+<div style="margin-top:14px"><label for="quality2">Qualidade adicional</label><select id="quality2"><option value="balanced" selected>Equilibrada</option><option value="high">Mais qualidade (arquivo maior)</option><option value="small">Arquivo menor</option></select></div>
+</section>
+<section class="card hidden" id="audioopts">
+<div class="grid"><div><label for="afmt">Formato de saída</label><select id="afmt"><option value="mp3" selected>MP3</option><option value="m4a">M4A (AAC)</option><option value="wav">WAV (sem compressão)</option><option value="flac">FLAC (sem perdas)</option></select></div>
+<div id="abitwrap"><label for="abit">Qualidade (taxa de bits)</label><select id="abit"><option value="64">64 kbps — voz / menor</option><option value="96">96 kbps</option><option value="128">128 kbps — boa</option><option value="192" selected>192 kbps — alta</option><option value="256">256 kbps</option><option value="320">320 kbps — máxima</option></select></div></div>
+<div style="margin-top:14px"><label for="ach">Canais</label><select id="ach"><option value="original" selected>Manter original</option><option value="1">Mono (arquivo menor)</option><option value="2">Estéreo</option></select></div>
+<p class="notice">Dá para enviar também um vídeo: o app extrai só o áudio dele.</p>
+</section>
+<section class="card"><button class="primary" id="go" disabled>COMPACTAR VÍDEO</button><div class="progressbox" id="progressbox"><div class="progress"><div class="bar" id="bar"></div></div><div class="status" id="status">Preparando...</div></div><div class="result" id="result"><h3 id="resulttitle">✅ Vídeo pronto!</h3><div id="resultstats"></div><a id="download" href="#">⬇️ BAIXAR VÍDEO</a></div><p class="notice" style="margin-bottom:0">O processamento ocorre no navegador. Vídeos grandes podem demorar e usar bastante memória. Mantenha esta página aberta durante a conversão.</p></section>
+<footer>Redutor de Vídeos • PWA • Processamento local</footer></main>
+<script type="module">
+import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js';
+import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
+const $=id=>document.getElementById(id);let selected=null,meta=null,mode='size',ffmpeg=null,loaded=false,outputUrl=null,ffLogs=[];
+const fmtBytes=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(2)+' MB';const fmtTime=s=>{if(!isFinite(s))return'—';let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=Math.floor(s%60);return h?`${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${m}:${String(ss).padStart(2,'0')}`};
+let kind='video';
+const AUD_EXT=['mp3','m4a','aac','wav','flac','ogg','oga','opus','wma','amr','aif','aiff','mka'];
+const DROP_V=['📂 Escolher ou soltar um vídeo aqui','MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg'];
+const DROP_A=['📂 Escolher ou soltar um áudio (ou vídeo) aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
+function setKind(k){kind=k;const a=k==='audio';document.querySelectorAll('#kindseg button').forEach(x=>x.classList.toggle('active',x.dataset.kind===k));$('videoopts').classList.toggle('hidden',a);$('audioopts').classList.toggle('hidden',!a);$('statdim').classList.toggle('hidden',a);$('go').textContent=a?'CONVERTER ÁUDIO':'COMPACTAR VÍDEO';$('resulttitle').textContent=a?'✅ Áudio pronto!':'✅ Vídeo pronto!';$('download').textContent=a?'⬇️ BAIXAR ÁUDIO':'⬇️ BAIXAR VÍDEO';$('dropt').textContent=(a?DROP_A:DROP_V)[0];$('drops').textContent=(a?DROP_A:DROP_V)[1];$('result').style.display='none'}
+document.querySelectorAll('#kindseg button').forEach(b=>b.onclick=()=>setKind(b.dataset.kind));
+$('afmt').onchange=()=>$('abitwrap').classList.toggle('hidden',['wav','flac'].includes($('afmt').value));
+async function runAudio(input){
+ const fmt=$('afmt').value,br=$('abit').value,ch=$('ach').value;
+ const cfg={mp3:{ext:'mp3',mime:'audio/mpeg',codec:['-c:a','libmp3lame']},m4a:{ext:'m4a',mime:'audio/mp4',codec:['-c:a','aac']},wav:{ext:'wav',mime:'audio/wav',codec:['-c:a','pcm_s16le']},flac:{ext:'flac',mime:'audio/flac',codec:['-c:a','flac']}}[fmt];
+ const out='output.'+cfg.ext;
+ const args=['-i',input,'-y','-vn','-map','0:a:0','-map_metadata','0',...cfg.codec];
+ if(!['wav','flac'].includes(fmt))args.push('-b:a',br+'k');
+ if(ch!=='original')args.push('-ac',ch);
+ if(fmt==='m4a')args.push('-movflags','+faststart');
+ args.push(out);
+ update(5,'Iniciando conversão de áudio...');
+ const code=await ffmpeg.exec(args);
+ if(code!==0)throw new Error('Não foi possível converter. O arquivo tem uma faixa de áudio?');
+ const data=await ffmpeg.readFile(out);
+ const blob=new Blob([data.buffer],{type:cfg.mime});
+ outputUrl=URL.createObjectURL(blob);$('download').href=outputUrl;$('download').download=selected.name.replace(/\.[^.]+$/,'_convertido.'+cfg.ext);
+ const reduction=(1-blob.size/selected.size)*100;
+ $('resultstats').innerHTML=`<p>Original: <b>${fmtBytes(selected.size)}</b></p><p>Final: <b>${fmtBytes(blob.size)}</b></p><p>${reduction>=0?'Redução':'Aumento'}: <b>${Math.abs(reduction).toFixed(1)}%</b></p>`;
+ $('result').style.display='block';update(100,'Concluído!');
+ await ffmpeg.deleteFile(input);await ffmpeg.deleteFile(out);
+}
+$('drop').onclick=()=> $('file').click();$('file').onchange=e=>setFile(e.target.files[0]);
+$('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('drag')};$('drop').ondragleave=()=> $('drop').classList.remove('drag');$('drop').ondrop=e=>{e.preventDefault();$('drop').classList.remove('drag');setFile(e.dataTransfer.files[0])};
+function setFile(f){
+ if(!f)return;
+ const ext=(f.name.split('.').pop()||'').toLowerCase();
+ const isAudio=f.type.startsWith('audio/')||AUD_EXT.includes(ext),isVideo=f.type.startsWith('video/')||['mts','m2ts','ts'].includes(ext);
+ if(!isVideo&&!isAudio){alert('Selecione um arquivo de vídeo ou áudio.');return;}
+ if(isAudio&&!f.type.startsWith('video/')&&kind!=='audio')setKind('audio');
+ selected=f;meta=null;
+ $('filename').textContent=f.name;$('filesize').textContent=fmtBytes(f.size);
+ $('dimensions').textContent='Será identificado';$('duration').textContent='Será identificada';
+ $('fileinfo').style.display='block';$('go').disabled=false;
+ // O navegador normalmente não lê metadados MTS. Não bloquear o botão:
+ // o FFmpeg fará a identificação do arquivo durante a conversão.
+ const v=document.createElement('video');v.preload='metadata';
+ const objectUrl=URL.createObjectURL(f);
+ v.onloadedmetadata=()=>{if(selected===f){meta={duration:v.duration,width:v.videoWidth,height:v.videoHeight};$('dimensions').textContent=meta.width?`${meta.width} × ${meta.height}`:'—';$('duration').textContent=fmtTime(meta.duration);}URL.revokeObjectURL(objectUrl);};
+ v.onerror=()=>URL.revokeObjectURL(objectUrl);
+ v.src=objectUrl;
+}
+document.querySelectorAll('#modeseg button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('#modeseg button').forEach(x=>x.classList.toggle('active',x===b));$('sizemode').classList.toggle('hidden',mode!=='size');$('qualitymode').classList.toggle('hidden',mode!=='quality')});$('quality').oninput=()=>{let n=+$('quality').value;$('crflabel').textContent=n<=22?`${n} — alta qualidade`:n<=28?`${n} — equilibrada`:`${n} — compactação alta`};
+function update(p,msg){$('bar').style.width=Math.max(0,Math.min(100,p))+'%';$('status').textContent=msg}
+async function downloadAsBlobURL(url,type,label,progressStart,progressEnd){
+  update(progressStart,`Baixando ${label}...`);
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),120000);
+  try{
+    const response=await fetch(url,{mode:'cors',cache:'force-cache',signal:controller.signal});
+    if(!response.ok)throw new Error(`Falha ao baixar ${label}: HTTP ${response.status}`);
+    const total=Number(response.headers.get('content-length'))||0;
+    if(!response.body){const blob=await response.blob();update(progressEnd,`${label} carregado.`);return URL.createObjectURL(new Blob([blob],{type}));}
+    const reader=response.body.getReader(),chunks=[];let received=0;
+    while(true){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.length;const pct=total?received/total:0;const p=progressStart+(progressEnd-progressStart)*pct;update(p,total?`Baixando ${label}: ${Math.round(pct*100)}%`:`Baixando ${label}: ${fmtBytes(received)}`)}
+    update(progressEnd,`${label} carregado.`);return URL.createObjectURL(new Blob(chunks,{type}));
+  }catch(e){if(e.name==='AbortError')throw new Error(`Tempo esgotado ao baixar ${label}. Verifique sua conexão ou tente novamente.`);throw e}
+  finally{clearTimeout(timeout)}
+}
+async function loadFF(){
+  if(loaded)return;
+  ffmpeg=new FFmpeg();
+  ffmpeg.on('progress',({progress})=>{if(kind==='audio')update(Math.min(10+progress*90,99),'Convertendo áudio... '+Math.round(progress*100)+'%');else if(mode==='quality')update(10+progress*90,'Compactando vídeo... '+Math.round(progress*100)+'%');else update(Math.min(10+progress*80,90),'Compactando vídeo...')});
+  ffmpeg.on('log',({message})=>{ffLogs.push(message);const dm=message.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);if(dm&&!meta?.duration){const duration=+dm[1]*3600 + +dm[2]*60 + +dm[3];const vm=message.match(/(\d{2,5})x(\d{2,5})/);meta={duration,width:vm?+vm[1]:0,height:vm?+vm[2]:0};$('dimensions').textContent=vm?`${meta.width} × ${meta.height}`:'—';$('duration').textContent=fmtTime(duration);}const m=message.match(/time=(\d+):(\d+):(\d+\.\d+)/);if(m&&meta?.duration){let t=+m[1]*3600+ +m[2]*60+ +m[3];if(mode==='size'&&kind!=='audio')update(Math.min(10+t/meta.duration*80,90),`Processando ${fmtTime(t)} de ${fmtTime(meta.duration)}...`)}});
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+  const worker='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
+  const coreURL=await downloadAsBlobURL(base+'/ffmpeg-core.js','text/javascript','núcleo FFmpeg',1,3);
+  const wasmURL=await downloadAsBlobURL(base+'/ffmpeg-core.wasm','application/wasm','motor WebAssembly',3,9);
+  // O worker principal precisa ser Blob, mas seus imports relativos precisam
+  // apontar explicitamente para os módulos ESM do mesmo pacote no CDN.
+  update(9,'Preparando Worker do FFmpeg...');
+  const workerResponse=await fetch(worker,{mode:'cors',cache:'force-cache'});
+  if(!workerResponse.ok)throw new Error(`Falha ao baixar Worker FFmpeg: HTTP ${workerResponse.status}`);
+  let workerSource=await workerResponse.text();
+  const workerBase='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/';
+  workerSource=workerSource.replace(/(["'])\.\/([a-zA-Z0-9_-]+\.js)\1/g,(_,q,file)=>q+workerBase+file+q);
+  const classWorkerURL=URL.createObjectURL(new Blob([workerSource],{type:'text/javascript'}));
+  update(10,'Inicializando motor de vídeo (Worker + WebAssembly)...');
+  await Promise.race([
+    ffmpeg.load({coreURL,wasmURL,classWorkerURL}),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('O FFmpeg não respondeu ao iniciar em 90 segundos. Verifique se o navegador permite Workers e WebAssembly.')),90000))
+  ]);
+  loaded=true;update(10,'Motor pronto. Preparando vídeo...');
+}
+$('go').onclick=async()=>{if(!selected)return;const btn=$('go');btn.disabled=true;$('progressbox').style.display='block';$('result').style.display='none';$('status').classList.remove('err');if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null}try{update(1,'Carregando motor de vídeo (primeira vez pode demorar)...');await loadFF();const ext=$('codec').value,input='input.'+(selected.name.split('.').pop()||'mp4').replace(/[^a-z0-9]/ig,'');await ffmpeg.writeFile(input,await fetchFile(selected));
+if(!meta?.duration&&kind!=='audio'){
+ update(11,'Lendo informações do vídeo MTS com FFmpeg...');
+ const before=ffLogs.length;
+ try{await ffmpeg.exec(['-i',input]);}catch(probeError){/* FFmpeg retorna erro esperado porque não foi indicado arquivo de saída; os metadados ficam nos logs. */}
+ const probeText=ffLogs.slice(before).join('\n');
+ const dm=probeText.match(/Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/);
+ if(dm){const duration=+dm[1]*3600 + +dm[2]*60 + +dm[3];const vm=probeText.match(/(\d{2,5})x(\d{2,5})/);meta={duration,width:vm?+vm[1]:0,height:vm?+vm[2]:0};$('duration').textContent=fmtTime(duration);$('dimensions').textContent=vm?`${meta.width} × ${meta.height}`:'—';}
+ if(!meta?.duration||!isFinite(meta.duration))throw new Error('O FFmpeg não conseguiu identificar a duração deste MTS. Verifique se o arquivo não está danificado.');
+}
+if(kind==='audio'){await runAudio(input);return}
+let args=['-i',input,'-y'];const res=$('resolution').value;if(res!=='original'){args.push('-vf',`scale=-2:'min(${res},ih)'`)}
+let crf=mode==='quality'?+$('quality').value:28;const q=$('quality2').value;if(q==='high')crf-=3;if(q==='small')crf+=3;crf=Math.max(18,Math.min(35,crf));let bitrate=null;if(mode==='size'){const mb=Math.max(1,+$('target').value||25);bitrate=Math.max(100,Math.floor((mb*8*1000/meta.duration)*0.80));args.push('-b:v',bitrate+'k','-maxrate',Math.floor(bitrate*1.25)+'k','-bufsize',Math.floor(bitrate*2)+'k')}else args.push('-crf',String(crf));
+args.push('-c:v',ext==='mp4'?'libx264':'libvpx-vp9','-preset',ext==='mp4'?'veryfast':'good');if(ext==='mp4')args.push('-pix_fmt','yuv420p','-movflags','+faststart');args.push('-c:a','aac','-b:a',mode==='size'?'96k':'128k');args.push('output.'+ext);update(2,'Iniciando conversão...');await ffmpeg.exec(args);const data=await ffmpeg.readFile('output.'+ext);const blob=new Blob([data.buffer],{type:ext==='mp4'?'video/mp4':'video/webm'});outputUrl=URL.createObjectURL(blob);$('download').href=outputUrl;$('download').download=selected.name.replace(/\.[^.]+$/,'_compactado.'+ext);const reduction=(1-blob.size/selected.size)*100;$('resultstats').innerHTML=`<p>Original: <b>${fmtBytes(selected.size)}</b></p><p>Final: <b>${fmtBytes(blob.size)}</b></p><p>${reduction>=0?'Redução':'Aumento'}: <b>${Math.abs(reduction).toFixed(1)}%</b></p>`;$('result').style.display='block';update(100,'Concluído!');await ffmpeg.deleteFile(input);await ffmpeg.deleteFile('output.'+ext)}catch(e){console.error(e);update(0,'Erro: '+(e.message||e));$('status').classList.add('err')}finally{btn.disabled=false}};
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>
