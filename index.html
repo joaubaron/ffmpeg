@@ -37,8 +37,8 @@ const $=id=>document.getElementById(id);let selected=null,meta=null,mode='size',
 const fmtBytes=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(2)+' MB';const fmtTime=s=>{if(!isFinite(s))return'—';let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=Math.floor(s%60);return h?`${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${m}:${String(ss).padStart(2,'0')}`};
 let kind='video';
 const AUD_EXT=['mp3','m4a','aac','wav','flac','ogg','oga','opus','wma','amr','aif','aiff','mka'];
-const DROP_V=['📂 Escolher ou soltar um vídeo aqui','MP4, MOV, MKV, AVI, WebM e outros formatos suportados pelo FFmpeg'];
-const DROP_A=['📂 Escolher ou soltar um áudio (ou vídeo) aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
+const DROP_V=['📂 Escolha um vídeo aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
+const DROP_A=['📂 Escolha um áudio  aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
 function setKind(k){kind=k;const a=k==='audio';document.querySelectorAll('#kindseg button').forEach(x=>x.classList.toggle('active',x.dataset.kind===k));$('videoopts').classList.toggle('hidden',a);$('audioopts').classList.toggle('hidden',!a);$('statdim').classList.toggle('hidden',a);$('go').textContent=a?'CONVERTER ÁUDIO':'COMPACTAR VÍDEO';$('resulttitle').textContent=a?'✅ Áudio pronto!':'✅ Vídeo pronto!';$('download').textContent=a?'⬇️ BAIXAR ÁUDIO':'⬇️ BAIXAR VÍDEO';$('dropt').textContent=(a?DROP_A:DROP_V)[0];$('drops').textContent=(a?DROP_A:DROP_V)[1];$('result').style.display='none'}
 document.querySelectorAll('#kindseg button').forEach(b=>b.onclick=()=>setKind(b.dataset.kind));
 $('afmt').onchange=()=>$('abitwrap').classList.toggle('hidden',['wav','flac'].includes($('afmt').value));
