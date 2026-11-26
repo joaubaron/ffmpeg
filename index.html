@@ -33,7 +33,35 @@ $('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('drag')};$('
 function setFile(f){if(!f||!f.type.startsWith('video/'))return;selected=f;const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{meta={duration:v.duration,width:v.videoWidth,height:v.videoHeight};$('filename').textContent=f.name;$('filesize').textContent=fmtBytes(f.size);$('dimensions').textContent=`${meta.width} × ${meta.height}`;$('duration').textContent=fmtTime(meta.duration);$('fileinfo').style.display='block';$('go').disabled=false;v.src='';};v.src=URL.createObjectURL(f)}
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('active',x===b));$('sizemode').classList.toggle('hidden',mode!=='size');$('qualitymode').classList.toggle('hidden',mode!=='quality')});$('quality').oninput=()=>{let n=+$('quality').value;$('crflabel').textContent=n<=22?`${n} — alta qualidade`:n<=28?`${n} — equilibrada`:`${n} — compactação alta`};
 function update(p,msg){$('bar').style.width=Math.max(0,Math.min(100,p))+'%';$('status').textContent=msg}
-async function loadFF(){if(loaded)return;ffmpeg=new FFmpeg();ffmpeg.on('progress',({progress})=>{if(mode==='quality')update(progress*100,'Compactando vídeo... '+Math.round(progress*100)+'%');else update(Math.min(progress*90,90),'Compactando vídeo...')});ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+\.\d+)/);if(m&&meta?.duration){let t=+m[1]*3600+ +m[2]*60+ +m[3];if(mode==='size')update(Math.min(90,t/meta.duration*90),`Processando ${fmtTime(t)} de ${fmtTime(meta.duration)}...`)}});const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';const worker='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';await ffmpeg.load({coreURL:await toBlobURL(base+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(base+'/ffmpeg-core.wasm','application/wasm'),classWorkerURL:await toBlobURL(worker,'text/javascript')});loaded=true}
+async function downloadAsBlobURL(url,type,label,progressStart,progressEnd){
+  update(progressStart,`Baixando ${label}...`);
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),120000);
+  try{
+    const response=await fetch(url,{mode:'cors',cache:'force-cache',signal:controller.signal});
+    if(!response.ok)throw new Error(`Falha ao baixar ${label}: HTTP ${response.status}`);
+    const total=Number(response.headers.get('content-length'))||0;
+    if(!response.body){const blob=await response.blob();update(progressEnd,`${label} carregado.`);return URL.createObjectURL(new Blob([blob],{type}));}
+    const reader=response.body.getReader(),chunks=[];let received=0;
+    while(true){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.length;const pct=total?received/total:0;const p=progressStart+(progressEnd-progressStart)*pct;update(p,total?`Baixando ${label}: ${Math.round(pct*100)}%`:`Baixando ${label}: ${fmtBytes(received)}`)}
+    update(progressEnd,`${label} carregado.`);return URL.createObjectURL(new Blob(chunks,{type}));
+  }catch(e){if(e.name==='AbortError')throw new Error(`Tempo esgotado ao baixar ${label}. Verifique sua conexão ou tente novamente.`);throw e}
+  finally{clearTimeout(timeout)}
+}
+async function loadFF(){
+  if(loaded)return;
+  ffmpeg=new FFmpeg();
+  ffmpeg.on('progress',({progress})=>{if(mode==='quality')update(10+progress*90,'Compactando vídeo... '+Math.round(progress*100)+'%');else update(Math.min(10+progress*80,90),'Compactando vídeo...')});
+  ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+\.\d+)/);if(m&&meta?.duration){let t=+m[1]*3600+ +m[2]*60+ +m[3];if(mode==='size')update(Math.min(10+t/meta.duration*80,90),`Processando ${fmtTime(t)} de ${fmtTime(meta.duration)}...`)}});
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+  const worker='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/worker.js';
+  const coreURL=await downloadAsBlobURL(base+'/ffmpeg-core.js','text/javascript','núcleo FFmpeg',1,3);
+  const wasmURL=await downloadAsBlobURL(base+'/ffmpeg-core.wasm','application/wasm','motor WebAssembly',3,9);
+  const classWorkerURL=await downloadAsBlobURL(worker,'text/javascript','Worker FFmpeg',9,10);
+  update(10,'Inicializando motor de vídeo...');
+  await ffmpeg.load({coreURL,wasmURL,classWorkerURL});
+  loaded=true;update(10,'Motor pronto. Preparando vídeo...');
+}
 $('go').onclick=async()=>{if(!selected)return;const btn=$('go');btn.disabled=true;$('progressbox').style.display='block';$('result').style.display='none';if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null}try{update(1,'Carregando motor de vídeo (primeira vez pode demorar)...');await loadFF();const ext=$('codec').value,input='input.'+(selected.name.split('.').pop()||'mp4').replace(/[^a-z0-9]/ig,'');await ffmpeg.writeFile(input,await fetchFile(selected));let args=['-i',input,'-y'];const res=$('resolution').value;if(res!=='original'){args.push('-vf',`scale=-2:'min(${res},ih)'`)}
 let crf=mode==='quality'?+$('quality').value:28;const q=$('quality2').value;if(q==='high')crf-=3;if(q==='small')crf+=3;crf=Math.max(18,Math.min(35,crf));let bitrate=null;if(mode==='size'){const mb=Math.max(1,+$('target').value||25);bitrate=Math.max(100,Math.floor((mb*8*1000/meta.duration)*0.80));args.push('-b:v',bitrate+'k','-maxrate',Math.floor(bitrate*1.25)+'k','-bufsize',Math.floor(bitrate*2)+'k')}else args.push('-crf',String(crf));
 args.push('-c:v',ext==='mp4'?'libx264':'libvpx-vp9','-preset',ext==='mp4'?'veryfast':'good');if(ext==='mp4')args.push('-pix_fmt','yuv420p','-movflags','+faststart');args.push('-c:a','aac','-b:a',mode==='size'?'96k':'128k');args.push('output.'+ext);update(2,'Iniciando conversão...');await ffmpeg.exec(args);const data=await ffmpeg.readFile('output.'+ext);const blob=new Blob([data.buffer],{type:ext==='mp4'?'video/mp4':'video/webm'});outputUrl=URL.createObjectURL(blob);$('download').href=outputUrl;$('download').download=selected.name.replace(/\.[^.]+$/,'_compactado.'+ext);const reduction=(1-blob.size/selected.size)*100;$('resultstats').innerHTML=`<p>Original: <b>${fmtBytes(selected.size)}</b></p><p>Final: <b>${fmtBytes(blob.size)}</b></p><p>${reduction>=0?'Redução':'Aumento'}: <b>${Math.abs(reduction).toFixed(1)}%</b></p>`;$('result').style.display='block';update(100,'Concluído!');await ffmpeg.deleteFile(input);await ffmpeg.deleteFile('output.'+ext)}catch(e){console.error(e);update(0,'Erro: '+(e.message||e));$('status').classList.add('err')}finally{btn.disabled=false}};
