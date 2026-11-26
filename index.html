@@ -12,7 +12,7 @@
 <header class="head"><div class="logo">🎬</div><div><h1>Redutor de Mídias</h1><p>Compacte ou converta vídeos e áudios.</p></div></header>
 <section class="card">
 <div class="seg" id="kindseg" style="margin-bottom:14px"><button class="active" data-kind="video">🎬 Vídeo</button><button data-kind="audio">🎵 Áudio</button></div>
-<div class="drop" id="drop"><strong id="dropt">📂 Escolha um vídeo aqui</strong><small id="drops">MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo</small><input id="file" type="file" accept="video/*,audio/*,.mts,.MTS,.m2ts,.M2TS,.ts,.TS,.m4a,.flac,.opus,.wma,.aac,.mka"></div>
+<div class="drop" id="drop"><strong id="dropt">📂 Escolha um vídeo aqui</strong><small id="drops">MP4, MOV, MKV, AVI, WebM… ou extraia o áudio de um vídeo</small><input id="file" type="file" accept="video/*,audio/*,.mts,.MTS,.m2ts,.M2TS,.ts,.TS,.m4a,.flac,.opus,.wma,.aac,.mka"></div>
 <div class="fileinfo" id="fileinfo"><strong id="filename"></strong><div class="stats"><div class="stat"><span>Tamanho</span><b id="filesize">—</b></div><div class="stat" id="statdim"><span>Resolução</span><b id="dimensions">—</b></div><div class="stat"><span>Duração</span><b id="duration">—</b></div></div></div>
 </section>
 <section class="card" id="videoopts">
@@ -37,7 +37,7 @@ const $=id=>document.getElementById(id);let selected=null,meta=null,mode='size',
 const fmtBytes=n=>n<1024*1024?(n/1024).toFixed(0)+' KB':(n/1024/1024).toFixed(2)+' MB';const fmtTime=s=>{if(!isFinite(s))return'—';let h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=Math.floor(s%60);return h?`${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${m}:${String(ss).padStart(2,'0')}`};
 let kind='video';
 const AUD_EXT=['mp3','m4a','aac','wav','flac','ogg','oga','opus','wma','amr','aif','aiff','mka'];
-const DROP_V=['📂 Escolha um vídeo aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
+const DROP_V=['📂 Escolha um vídeo aqui','MP4, MOV, MKV, AVI, WebM… ou extraia o áudio de um vídeo'];
 const DROP_A=['📂 Escolha um áudio  aqui','MP3, M4A, WAV, FLAC, OGG… ou extraia o áudio de um vídeo'];
 function setKind(k){kind=k;const a=k==='audio';document.querySelectorAll('#kindseg button').forEach(x=>x.classList.toggle('active',x.dataset.kind===k));$('videoopts').classList.toggle('hidden',a);$('audioopts').classList.toggle('hidden',!a);$('statdim').classList.toggle('hidden',a);$('go').textContent=a?'CONVERTER ÁUDIO':'COMPACTAR VÍDEO';$('resulttitle').textContent=a?'✅ Áudio pronto!':'✅ Vídeo pronto!';$('download').textContent=a?'⬇️ BAIXAR ÁUDIO':'⬇️ BAIXAR VÍDEO';$('dropt').textContent=(a?DROP_A:DROP_V)[0];$('drops').textContent=(a?DROP_A:DROP_V)[1];$('result').style.display='none'}
 document.querySelectorAll('#kindseg button').forEach(b=>b.onclick=()=>setKind(b.dataset.kind));
