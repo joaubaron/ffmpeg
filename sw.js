@@ -1,4 +1,4 @@
-const CACHE = 'redutor-video-v4';
+const CACHE = 'redutor-video-v5';
 
 const FILES = [
   './',
