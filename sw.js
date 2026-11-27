@@ -1,4 +1,4 @@
-const CACHE_VERSION = '27.11.2026-0922';
+const CACHE_VERSION = '27.11.2026-1014';
 const CACHE_PREFIX = 'redutor-video-';
 const CACHE = CACHE_PREFIX + CACHE_VERSION;
 const MOTOR = 'motor-ffmpeg'; // guarda o motor (~30 MB); não é apagado nas atualizações
