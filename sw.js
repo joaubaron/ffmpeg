@@ -1,4 +1,4 @@
-const CACHE_VERSION = '27.11.2026-1018';
+const CACHE_VERSION = '27.11.2026-1019';
 const CACHE_PREFIX = 'redutor-video-';
 const CACHE = CACHE_PREFIX + CACHE_VERSION;
 const MOTOR = 'motor-ffmpeg'; // guarda o motor (~30 MB); não é apagado nas atualizações
@@ -7,7 +7,8 @@ const FILES = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', event => {
